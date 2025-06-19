@@ -1,18 +1,35 @@
-import telebot
+from telegram import Update
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
-TOKEN = "7901632898:AAFF5UShYE8-cEC71ABnJX9gC_zpClwBtZQ"
-ADMIN_USERNAME = "@alfaperson42"
+# ВСТАВЬ СЮДА СВОЙ ТОКЕН:
+TOKEN = '7901632898:AAFF5UShYE8-cEC71ABnJX9gC_zpClwBtZQ'
 
-bot = telebot.TeleBot(TOKEN)
+# Никнейм администратора
+ADMIN_USERNAME = '@alfaperson42'
 
-@bot.message_handler(commands=['start'])
-def start_message(message):
-    bot.send_message(message.chat.id, "Здравствуйте! Напишите, какую услугу вы ищете, и мы вам подберём мастера.")
+# Стартовая команда
+def start(update: Update, context: CallbackContext):
+    update.message.reply_text("Добро пожаловать в сервис Usta KG! Напишите, какая услуга вам нужна (например: сантехник, электрик, ремонт и т.д.).")
 
-@bot.message_handler(func=lambda message: True)
-def forward_request(message):
-    # Перешлём сообщение админу
-    bot.send_message(message.chat.id, "Спасибо! Ваша заявка отправлена.")
-    bot.send_message(ADMIN_USERNAME, f"Заявка от @{message.from_user.username or message.from_user.first_name}:\n{message.text}")
+# Обработка всех сообщений
+def handle_message(update: Update, context: CallbackContext):
+    user_message = update.message.text
+    user = update.message.from_user
 
-bot.polling()
+    message_to_admin = f"📥 Новая заявка от @{user.username or user.id}:\n\n{user_message}"
+    context.bot.send_message(chat_id=ADMIN_USERNAME, text=message_to_admin)
+    update.message.reply_text("✅ Ваша заявка отправлена. Мы свяжемся с вами в ближайшее время!")
+
+# Главная функция запуска
+def main():
+    updater = Updater(TOKEN, use_context=True)
+    dp = updater.dispatcher
+
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+
+    updater.start_polling()
+    updater.idle()
+
+if __name__ == '__main__':
+    main()
